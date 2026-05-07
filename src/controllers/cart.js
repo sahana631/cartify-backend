@@ -1,29 +1,22 @@
 const prisma = require('../lib/prisma');
 
-// Temporary hardcoded userId — will come from auth session once login is set up
-const TEMP_USER_ID = 1;
-
 const getCart = async (req, res) => {
-  const items = await prisma.cartItem.findMany({ where: { userId: TEMP_USER_ID } });
+  const items = await prisma.cartItem.findMany({ where: { userId: req.session.userId } });
   res.json(items);
 };
 
 const addItems = async (req, res) => {
   const { recipeId, recipeTitle, ingredients } = req.body;
-  if (!recipeId || !ingredients?.length) {
+  if (!recipeId || !ingredients?.length)
     return res.status(400).json({ error: 'recipeId and ingredients are required' });
-  }
-  const existing = await prisma.cartItem.findFirst({ where: { recipeId, userId: TEMP_USER_ID } });
+  const existing = await prisma.cartItem.findFirst({ where: { recipeId, userId: req.session.userId } });
   if (existing) {
     const merged = [...new Set([...existing.ingredients, ...ingredients])];
-    const updated = await prisma.cartItem.update({
-      where: { id: existing.id },
-      data: { ingredients: merged },
-    });
+    const updated = await prisma.cartItem.update({ where: { id: existing.id }, data: { ingredients: merged } });
     return res.json(updated);
   }
   const item = await prisma.cartItem.create({
-    data: { recipeId, recipeTitle, ingredients, userId: TEMP_USER_ID },
+    data: { recipeId, recipeTitle, ingredients, userId: req.session.userId },
   });
   res.status(201).json(item);
 };
@@ -48,7 +41,7 @@ const removeItem = async (req, res) => {
 };
 
 const clearCart = async (req, res) => {
-  await prisma.cartItem.deleteMany({ where: { userId: TEMP_USER_ID } });
+  await prisma.cartItem.deleteMany({ where: { userId: req.session.userId } });
   res.json({ success: true });
 };
 

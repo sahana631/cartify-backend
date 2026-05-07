@@ -9,25 +9,45 @@ datasource db {
 }
 
 model User {
-  id        Int        @id @default(autoincrement())
-  email     String     @unique
-  name      String
-  createdAt DateTime   @default(now())
-  recipes   Recipe[]
-  cartItems CartItem[]
+  id                 Int        @id @default(autoincrement())
+  email              String?    @unique
+  name               String
+  password           String?
+  createdAt          DateTime   @default(now())
+  krogerUserId       String?   @unique
+  krogerAccessToken  String?
+  krogerRefreshToken String?
+  krogerTokenExpiry  DateTime?
+  recipes            Recipe[]
+  cartItems          CartItem[]
+  mealPlans          MealPlan[]
 }
 
 model Recipe {
-  id          Int      @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   title       String
   description String?
   time        String
   servings    Int
   ingredients String[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  user        User       @relation(fields: [userId], references: [id])
   userId      Int
+  mealPlans   MealPlan[]
+}
+
+model MealPlan {
+  id        Int      @id @default(autoincrement())
+  date      String
+  mealType  String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  recipeId  Int
+  recipe    Recipe   @relation(fields: [recipeId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date, mealType])
 }
 
 model CartItem {
