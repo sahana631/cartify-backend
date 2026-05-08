@@ -7,6 +7,7 @@ const recipeRoutes = require('./routes/recipes');
 const cartRoutes = require('./routes/cart');
 const krogerRoutes = require('./routes/kroger');
 const plannerRoutes = require('./routes/planner');
+const parseRecipeRoutes = require('./routes/parseRecipe');
 const requireAuth = require('./middleware/requireAuth');
 
 const app = express();
@@ -27,5 +28,6 @@ app.use('/api/recipes', requireAuth, recipeRoutes);
 app.use('/api/cart', requireAuth, cartRoutes);
 app.use('/auth/kroger', krogerRoutes);
 app.use('/api/planner', requireAuth, plannerRoutes);
+app.use('/api/parse-recipe', requireAuth, parseRecipeRoutes);
 
 module.exports = app;
