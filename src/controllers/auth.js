@@ -59,7 +59,10 @@ const register = async (req, res) => {
   );
 
   req.session.userId = user.id;
-  res.status(201).json({ id: user.id, name: user.name, email: user.email });
+  req.session.save((err) => {
+    if (err) return res.status(500).json({ error: 'Session error' });
+    res.status(201).json({ id: user.id, name: user.name, email: user.email });
+  });
 };
 
 const login = async (req, res) => {
@@ -76,7 +79,10 @@ const login = async (req, res) => {
     return res.status(401).json({ error: 'Invalid email or password' });
 
   req.session.userId = user.id;
-  res.json({ id: user.id, name: user.name, email: user.email });
+  req.session.save((err) => {
+    if (err) return res.status(500).json({ error: 'Session error' });
+    res.json({ id: user.id, name: user.name, email: user.email });
+  });
 };
 
 const updateProfile = async (req, res) => {
