@@ -17,6 +17,8 @@ const parseRecipe = async (req, res) => {
 - time (string): total cook/prep time, e.g. "30 min" or "1 hr 15 min"
 - servings (number): number of servings
 - ingredients (array of strings): each ingredient with its quantity, e.g. "2 cups jasmine rice"
+- instructions (string): numbered step-by-step instructions, each step on its own line, e.g. "1. Preheat oven to 375°F.\\n2. Mix dry ingredients."
+- tags (array of strings): 1–4 short tags describing the recipe, chosen from categories like cuisine (Italian, Mexican, Asian, American), diet (Vegetarian, Vegan, Gluten-Free), or type (Quick, Breakfast, Soup, Pasta, Chicken, Salad, Dessert, etc.)
 
 Return only valid JSON, no markdown, no explanation.
 

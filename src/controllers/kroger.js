@@ -1,7 +1,7 @@
 const prisma = require('../lib/prisma');
 const { exchangeCode, refreshAccessToken, getAppToken, getKrogerProfile, searchProducts, addItemsToCart } = require('../services/kroger');
 
-const FRONTEND = 'http://localhost:5173';
+const FRONTEND = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 const SAMPLE_RECIPES = [
   {

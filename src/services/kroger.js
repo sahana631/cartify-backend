@@ -1,11 +1,32 @@
 const BASE = 'https://api.kroger.com/v1';
 
+const INGREDIENT_ALIASES = {
+  'pepper': 'black pepper',
+  'chili': 'chili powder',
+  'chilli': 'chili powder',
+  'oil': 'vegetable oil',
+  'flour': 'all purpose flour',
+  'sugar': 'granulated sugar',
+  'stock': 'chicken stock',
+  'broth': 'chicken broth',
+  'milk': 'whole milk',
+  'butter': 'unsalted butter',
+  'cream': 'heavy cream',
+  'herbs': 'mixed herbs',
+  'seasoning': 'all purpose seasoning',
+};
+
 function stripMeasurement(ingredient) {
   return ingredient
     .replace(/^\d+(\s*\d+\/\d+|\.\d+|\/\d+)?\s*/i, '')
     .replace(/^(cups?|tbsps?|tsps?|tablespoons?|teaspoons?|oz|ounces?|lbs?|pounds?|grams?|g|kg|ml|liters?|litres?|pinch(es)?|dash(es)?|cloves?|cans?|bunches?|heads?|slices?|pieces?|stalks?|sprigs?|packets?|fillets?)\s+/i, '')
     .replace(/,.*$/, '')
     .trim();
+}
+
+function normalizeIngredient(ingredient) {
+  const stripped = stripMeasurement(ingredient).toLowerCase();
+  return INGREDIENT_ALIASES[stripped] || stripped;
 }
 
 function basicAuth() {
@@ -77,7 +98,7 @@ async function refreshAccessToken(refreshToken) {
 }
 
 async function searchProducts(term, accessToken, limit = 3) {
-  const params = new URLSearchParams({ 'filter.term': stripMeasurement(term), 'filter.limit': String(limit) });
+  const params = new URLSearchParams({ 'filter.term': normalizeIngredient(term), 'filter.limit': String(limit) });
   const res = await fetch(`${BASE}/products?${params}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });

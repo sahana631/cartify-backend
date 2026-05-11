@@ -6,11 +6,18 @@ const getAll = async (req, res) => {
 };
 
 const create = async (req, res) => {
-  const { title, description, time, servings, ingredients } = req.body;
+  const { title, description, time, servings, ingredients, instructions, tags } = req.body;
   if (!title || !ingredients?.length)
     return res.status(400).json({ error: 'title and ingredients are required' });
   const recipe = await prisma.recipe.create({
-    data: { title, description, time, servings: Number(servings), ingredients, userId: req.session.userId },
+    data: {
+      title, description, time,
+      servings: Number(servings),
+      ingredients,
+      instructions: instructions || null,
+      tags: tags || [],
+      userId: req.session.userId,
+    },
   });
   res.status(201).json(recipe);
 };
