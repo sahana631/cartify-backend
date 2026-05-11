@@ -22,7 +22,10 @@ app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173', cred
 app.use(express.json());
 app.use(session({
   store: isProd ? new pgSession({
-    pool: new Pool({ connectionString: process.env.DATABASE_URL }),
+    pool: new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    }),
     createTableIfMissing: true,
   }) : undefined,
   secret: process.env.SESSION_SECRET || 'cartable-dev-secret',
