@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
+const { Pool } = require('pg');
 
 const authRoutes = require('./routes/auth');
 const recipeRoutes = require('./routes/recipes');
@@ -19,6 +21,10 @@ const isProd = process.env.NODE_ENV === 'production';
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173', credentials: true }));
 app.use(express.json());
 app.use(session({
+  store: isProd ? new pgSession({
+    pool: new Pool({ connectionString: process.env.DATABASE_URL }),
+    createTableIfMissing: true,
+  }) : undefined,
   secret: process.env.SESSION_SECRET || 'cartable-dev-secret',
   resave: false,
   saveUninitialized: false,
