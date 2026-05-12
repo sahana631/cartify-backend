@@ -104,7 +104,6 @@ async function searchProducts(term, accessToken, limit = 3) {
   const params = new URLSearchParams({
     'filter.term': normalizeIngredient(term),
     'filter.limit': String(limit * 3),
-    'filter.fulfillment': 'ais',
   });
   const res = await fetch(`${BASE}/products?${params}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -115,8 +114,8 @@ async function searchProducts(term, accessToken, limit = 3) {
     .filter((p) => {
       const item = p.items?.[0];
       if (!item) return false;
-      if (OUT_OF_STOCK_LEVELS.has(item.inventory?.stockLevel)) return false;
-      return item.price?.regular != null;
+      // Only exclude products explicitly marked out of stock
+      return !OUT_OF_STOCK_LEVELS.has(item.inventory?.stockLevel);
     })
     .slice(0, limit)
     .map((p) => {
