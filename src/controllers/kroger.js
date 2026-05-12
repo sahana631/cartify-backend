@@ -143,7 +143,7 @@ const krogerCallback = async (req, res) => {
 };
 
 const getLocations = async (req, res) => {
-  const { zip, lat, lng, chain } = req.query;
+  const { zip, lat, lng } = req.query;
   if (!zip && (lat == null || lng == null)) {
     return res.status(400).json({ error: 'zip or lat/lng is required' });
   }
@@ -158,7 +158,6 @@ const getLocations = async (req, res) => {
   const locations = await searchLocations(
     { zip, lat: lat ? parseFloat(lat) : null, lng: lng ? parseFloat(lng) : null },
     appToken,
-    chain || null,
   );
   res.json({ locations });
 };

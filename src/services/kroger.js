@@ -99,10 +99,10 @@ async function refreshAccessToken(refreshToken) {
 
 const OUT_OF_STOCK_LEVELS = new Set(['OUT_OF_STOCK', 'TEMPORARILY_OUT_OF_STOCK']);
 
-async function searchLocations({ zip, lat, lng } = {}, appToken, chain = null) {
+async function searchLocations({ zip, lat, lng } = {}, appToken) {
   const params = new URLSearchParams({
     'filter.radiusInMiles': '10',
-    'filter.limit': '5',
+    'filter.limit': '10',
   });
   if (lat != null && lng != null) {
     params.set('filter.latLong', `${lat},${lng}`);
@@ -111,7 +111,6 @@ async function searchLocations({ zip, lat, lng } = {}, appToken, chain = null) {
   } else {
     return [];
   }
-  if (chain) params.set('filter.chain', chain);
 
   const res = await fetch(`${BASE}/locations?${params}`, {
     headers: { Authorization: `Bearer ${appToken}` },
@@ -121,6 +120,7 @@ async function searchLocations({ zip, lat, lng } = {}, appToken, chain = null) {
   return (data.data || []).map((loc) => ({
     locationId: loc.locationId,
     name: loc.name,
+    chain: loc.chain || null,
     address: [loc.address?.addressLine1, loc.address?.city, loc.address?.state].filter(Boolean).join(', '),
   }));
 }
