@@ -99,31 +99,52 @@ async function refreshAccessToken(refreshToken) {
 
 const OUT_OF_STOCK_LEVELS = new Set(['OUT_OF_STOCK', 'TEMPORARILY_OUT_OF_STOCK']);
 
-async function searchProducts(term, accessToken, limit = 3) {
-  // Request extra candidates so filtering doesn't leave us short
+async function searchLocations(zipCode, appToken) {
   const params = new URLSearchParams({
-    'filter.term': normalizeIngredient(term),
-    'filter.limit': String(limit * 3),
+    'filter.zipCode': zipCode,
+    'filter.radiusInMiles': '15',
+    'filter.limit': '5',
   });
-  const res = await fetch(`${BASE}/products?${params}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
+  const res = await fetch(`${BASE}/locations?${params}`, {
+    headers: { Authorization: `Bearer ${appToken}` },
   });
   if (!res.ok) return [];
   const data = await res.json();
-  return (data.data || [])
-    .filter((p) => {
+  return (data.data || []).map((loc) => ({
+    locationId: loc.locationId,
+    name: loc.name,
+    address: [loc.address?.addressLine1, loc.address?.city, loc.address?.state].filter(Boolean).join(', '),
+  }));
+}
+
+async function searchProducts(term, appToken, limit = 3, locationId = null) {
+  const params = new URLSearchParams({
+    'filter.term': normalizeIngredient(term),
+    'filter.limit': String(locationId ? limit * 3 : limit),
+  });
+  if (locationId) params.set('filter.locationId', locationId);
+
+  const res = await fetch(`${BASE}/products?${params}`, {
+    headers: { Authorization: `Bearer ${appToken}` },
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+
+  let products = data.data || [];
+  if (locationId) {
+    products = products.filter((p) => {
       const item = p.items?.[0];
       if (!item) return false;
-      // Only exclude products explicitly marked out of stock
       return !OUT_OF_STOCK_LEVELS.has(item.inventory?.stockLevel);
-    })
-    .slice(0, limit)
-    .map((p) => {
-      const featuredImg = p.images?.find((img) => img.featured) || p.images?.[0];
-      const image = featuredImg?.sizes?.find((s) => s.size === 'thumbnail')?.url || featuredImg?.sizes?.[0]?.url;
-      const price = p.items?.[0]?.price?.regular;
-      return { upc: p.upc, name: p.description, image, price };
     });
+  }
+
+  return products.slice(0, limit).map((p) => {
+    const featuredImg = p.images?.find((img) => img.featured) || p.images?.[0];
+    const image = featuredImg?.sizes?.find((s) => s.size === 'thumbnail')?.url || featuredImg?.sizes?.[0]?.url;
+    const price = p.items?.[0]?.price?.regular;
+    return { upc: p.upc, name: p.description, image, price };
+  });
 }
 
 async function addItemsToCart(items, accessToken) {
@@ -158,4 +179,4 @@ async function getKrogerProfile(accessToken) {
   }
 }
 
-module.exports = { exchangeCode, refreshAccessToken, getAppToken, getKrogerProfile, searchProducts, addItemsToCart };
+module.exports = { exchangeCode, refreshAccessToken, getAppToken, getKrogerProfile, searchLocations, searchProducts, addItemsToCart };

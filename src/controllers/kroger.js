@@ -1,5 +1,5 @@
 const prisma = require('../lib/prisma');
-const { exchangeCode, refreshAccessToken, getAppToken, getKrogerProfile, searchProducts, addItemsToCart } = require('../services/kroger');
+const { exchangeCode, refreshAccessToken, getAppToken, getKrogerProfile, searchLocations, searchProducts, addItemsToCart } = require('../services/kroger');
 
 const FRONTEND = process.env.FRONTEND_URL || 'http://localhost:5173';
 
@@ -142,8 +142,23 @@ const krogerCallback = async (req, res) => {
   }
 };
 
+const getLocations = async (req, res) => {
+  const { zip } = req.query;
+  if (!zip) return res.status(400).json({ error: 'zip is required' });
+
+  let appToken;
+  try {
+    appToken = await getAppToken();
+  } catch {
+    return res.status(502).json({ error: 'Failed to connect to Kroger' });
+  }
+
+  const locations = await searchLocations(zip, appToken);
+  res.json({ locations });
+};
+
 const searchIngredients = async (req, res) => {
-  const { ingredients } = req.body;
+  const { ingredients, locationId } = req.body;
   if (!ingredients?.length) return res.status(400).json({ error: 'No ingredients provided' });
 
   let appToken;
@@ -156,7 +171,7 @@ const searchIngredients = async (req, res) => {
   const results = await Promise.all(
     ingredients.map(async (ingredient) => ({
       ingredient,
-      products: await searchProducts(ingredient, appToken),
+      products: await searchProducts(ingredient, appToken, 3, locationId || null),
     }))
   );
 
@@ -180,4 +195,4 @@ const sendToKroger = async (req, res) => {
   res.json({ added: items.length });
 };
 
-module.exports = { connectKroger, loginWithKroger, krogerCallback, searchIngredients, sendToKroger };
+module.exports = { connectKroger, loginWithKroger, krogerCallback, getLocations, searchIngredients, sendToKroger };
