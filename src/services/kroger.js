@@ -113,7 +113,7 @@ function haversine(lat1, lng1, lat2, lng2) {
 async function searchLocations({ zip, lat, lng } = {}, appToken) {
   if (lat == null && !zip) return [];
 
-  const baseParams = { 'filter.radiusInMiles': '50', 'filter.limit': '5' };
+  const baseParams = { 'filter.radiusInMiles': '50', 'filter.limit': '10' };
   if (lat != null && lng != null) baseParams['filter.latLong'] = `${lat},${lng}`;
   else baseParams['filter.zipCode'] = zip;
 
