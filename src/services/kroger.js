@@ -133,7 +133,7 @@ async function searchLocations({ zip, lat, lng } = {}, appToken) {
   }
 
   const baseParams = { 'filter.radiusInMiles': '50', 'filter.limit': '10' };
-  if (lat != null && lng != null) baseParams['filter.latLong'] = `${lat},${lng}`;
+  if (lat != null && lng != null) baseParams['filter.latLng'] = `${lat},${lng}`;
   else baseParams['filter.zipCode'] = zip;
 
   const allResults = await Promise.all(
@@ -143,10 +143,16 @@ async function searchLocations({ zip, lat, lng } = {}, appToken) {
         const res = await fetch(`${BASE}/locations?${params}`, {
           headers: { Authorization: `Bearer ${appToken}` },
         });
-        if (!res.ok) return [];
-        const data = await res.json();
+        const text = await res.text();
+        if (!res.ok) {
+          console.log(`Kroger locations [${chain}] ${res.status}:`, text.slice(0, 200));
+          return [];
+        }
+        const data = JSON.parse(text);
+        console.log(`Kroger locations [${chain}]: ${(data.data || []).length} results`);
         return data.data || [];
-      } catch {
+      } catch (err) {
+        console.log(`Kroger locations [${chain}] error:`, err.message);
         return [];
       }
     })
