@@ -97,19 +97,34 @@ async function refreshAccessToken(refreshToken) {
   return res.json();
 }
 
+const OUT_OF_STOCK_LEVELS = new Set(['OUT_OF_STOCK', 'TEMPORARILY_OUT_OF_STOCK']);
+
 async function searchProducts(term, accessToken, limit = 3) {
-  const params = new URLSearchParams({ 'filter.term': normalizeIngredient(term), 'filter.limit': String(limit) });
+  // Request extra candidates so filtering doesn't leave us short
+  const params = new URLSearchParams({
+    'filter.term': normalizeIngredient(term),
+    'filter.limit': String(limit * 3),
+    'filter.fulfillment': 'ais',
+  });
   const res = await fetch(`${BASE}/products?${params}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!res.ok) return [];
   const data = await res.json();
-  return (data.data || []).map((p) => {
-    const featuredImg = p.images?.find((img) => img.featured) || p.images?.[0];
-    const image = featuredImg?.sizes?.find((s) => s.size === 'thumbnail')?.url || featuredImg?.sizes?.[0]?.url;
-    const price = p.items?.[0]?.price?.regular;
-    return { upc: p.upc, name: p.description, image, price };
-  });
+  return (data.data || [])
+    .filter((p) => {
+      const item = p.items?.[0];
+      if (!item) return false;
+      if (OUT_OF_STOCK_LEVELS.has(item.inventory?.stockLevel)) return false;
+      return item.price?.regular != null;
+    })
+    .slice(0, limit)
+    .map((p) => {
+      const featuredImg = p.images?.find((img) => img.featured) || p.images?.[0];
+      const image = featuredImg?.sizes?.find((s) => s.size === 'thumbnail')?.url || featuredImg?.sizes?.[0]?.url;
+      const price = p.items?.[0]?.price?.regular;
+      return { upc: p.upc, name: p.description, image, price };
+    });
 }
 
 async function addItemsToCart(items, accessToken) {
