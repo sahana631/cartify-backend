@@ -143,8 +143,10 @@ const krogerCallback = async (req, res) => {
 };
 
 const getLocations = async (req, res) => {
-  const { zip, chain } = req.query;
-  if (!zip) return res.status(400).json({ error: 'zip is required' });
+  const { zip, lat, lng, chain } = req.query;
+  if (!zip && (lat == null || lng == null)) {
+    return res.status(400).json({ error: 'zip or lat/lng is required' });
+  }
 
   let appToken;
   try {
@@ -153,7 +155,11 @@ const getLocations = async (req, res) => {
     return res.status(502).json({ error: 'Failed to connect to Kroger' });
   }
 
-  const locations = await searchLocations(zip, appToken, chain || null);
+  const locations = await searchLocations(
+    { zip, lat: lat ? parseFloat(lat) : null, lng: lng ? parseFloat(lng) : null },
+    appToken,
+    chain || null,
+  );
   res.json({ locations });
 };
 
