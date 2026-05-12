@@ -101,8 +101,8 @@ const OUT_OF_STOCK_LEVELS = new Set(['OUT_OF_STOCK', 'TEMPORARILY_OUT_OF_STOCK']
 
 async function searchLocations({ zip, lat, lng } = {}, appToken) {
   const params = new URLSearchParams({
-    'filter.radiusInMiles': '10',
-    'filter.limit': '10',
+    'filter.radiusInMiles': '50',
+    'filter.limit': '50',
   });
   if (lat != null && lng != null) {
     params.set('filter.latLong', `${lat},${lng}`);
