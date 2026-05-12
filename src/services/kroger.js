@@ -99,29 +99,56 @@ async function refreshAccessToken(refreshToken) {
 
 const OUT_OF_STOCK_LEVELS = new Set(['OUT_OF_STOCK', 'TEMPORARILY_OUT_OF_STOCK']);
 
+const ALL_CHAINS = ['KROGER','FRED','QFC','RALPHS','KINGSOOPERS','SMITHS','FRYS','HARRISTEETER','MARIANOS','CITYMARKET','DILLONS','PICKNSAVE','METRO','BAKERS','GERBES'];
+
+function haversine(lat1, lng1, lat2, lng2) {
+  if (lat2 == null || lng2 == null) return Infinity;
+  const R = 3959;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 async function searchLocations({ zip, lat, lng } = {}, appToken) {
-  const params = new URLSearchParams({
-    'filter.radiusInMiles': '50',
-    'filter.limit': '50',
-  });
+  if (lat == null && !zip) return [];
+
+  const baseParams = { 'filter.radiusInMiles': '50', 'filter.limit': '5' };
+  if (lat != null && lng != null) baseParams['filter.latLong'] = `${lat},${lng}`;
+  else baseParams['filter.zipCode'] = zip;
+
+  const allResults = await Promise.all(
+    ALL_CHAINS.map(async (chain) => {
+      const params = new URLSearchParams({ ...baseParams, 'filter.chain': chain });
+      try {
+        const res = await fetch(`${BASE}/locations?${params}`, {
+          headers: { Authorization: `Bearer ${appToken}` },
+        });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.data || [];
+      } catch {
+        return [];
+      }
+    })
+  );
+
+  const combined = allResults.flat();
+
   if (lat != null && lng != null) {
-    params.set('filter.latLong', `${lat},${lng}`);
-  } else if (zip) {
-    params.set('filter.zipCode', zip);
-  } else {
-    return [];
+    combined.sort((a, b) => {
+      const dA = haversine(lat, lng, a.geolocation?.latitude, a.geolocation?.longitude);
+      const dB = haversine(lat, lng, b.geolocation?.latitude, b.geolocation?.longitude);
+      return dA - dB;
+    });
   }
 
-  const res = await fetch(`${BASE}/locations?${params}`, {
-    headers: { Authorization: `Bearer ${appToken}` },
-  });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return (data.data || []).map((loc) => ({
+  return combined.map((loc) => ({
     locationId: loc.locationId,
     name: loc.name,
     chain: loc.chain || null,
     address: [loc.address?.addressLine1, loc.address?.city, loc.address?.state].filter(Boolean).join(', '),
+    distance: lat != null ? Math.round(haversine(lat, lng, loc.geolocation?.latitude, loc.geolocation?.longitude) * 10) / 10 : null,
   }));
 }
 
