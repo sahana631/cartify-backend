@@ -99,12 +99,13 @@ async function refreshAccessToken(refreshToken) {
 
 const OUT_OF_STOCK_LEVELS = new Set(['OUT_OF_STOCK', 'TEMPORARILY_OUT_OF_STOCK']);
 
-async function searchLocations(zipCode, appToken) {
+async function searchLocations(zipCode, appToken, chain = null) {
   const params = new URLSearchParams({
     'filter.zipCode': zipCode,
     'filter.radiusInMiles': '15',
     'filter.limit': '5',
   });
+  if (chain) params.set('filter.chain', chain);
   const res = await fetch(`${BASE}/locations?${params}`, {
     headers: { Authorization: `Bearer ${appToken}` },
   });
