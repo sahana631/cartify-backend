@@ -110,8 +110,27 @@ function haversine(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+async function zipToLatLng(zip) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?postalcode=${encodeURIComponent(zip)}&country=US&format=json&limit=1`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'Cartable/1.0' } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.length) return null;
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  } catch {
+    return null;
+  }
+}
+
 async function searchLocations({ zip, lat, lng } = {}, appToken) {
   if (lat == null && !zip) return [];
+
+  // Convert zip to coordinates so we can always sort by distance
+  if ((lat == null || lng == null) && zip) {
+    const coords = await zipToLatLng(zip);
+    if (coords) { lat = coords.lat; lng = coords.lng; }
+  }
 
   const baseParams = { 'filter.radiusInMiles': '50', 'filter.limit': '10' };
   if (lat != null && lng != null) baseParams['filter.latLong'] = `${lat},${lng}`;
