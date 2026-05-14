@@ -122,6 +122,22 @@ const logout = (req, res) => {
   req.session.destroy(() => res.json({ success: true }));
 };
 
+const deleteAccount = async (req, res) => {
+  if (!req.session.userId)
+    return res.status(401).json({ error: 'Not logged in' });
+
+  const userId = req.session.userId;
+
+  // Delete in order to satisfy foreign key constraints
+  await prisma.mealPlan.deleteMany({ where: { userId } });
+  await prisma.recipe.deleteMany({ where: { userId } });
+  await prisma.cartItem.deleteMany({ where: { userId } });
+  await prisma.pantryItem.deleteMany({ where: { userId } });
+  await prisma.user.delete({ where: { id: userId } });
+
+  req.session.destroy(() => res.json({ success: true }));
+};
+
 const me = async (req, res) => {
   if (!req.session.userId)
     return res.status(401).json({ error: 'Not logged in' });
@@ -131,4 +147,4 @@ const me = async (req, res) => {
   res.json({ id: user.id, name: user.name, email: user.email, krogerConnected: !!user.krogerAccessToken, krogerOnly: !user.password });
 };
 
-module.exports = { register, login, logout, me, updateProfile };
+module.exports = { register, login, logout, me, updateProfile, deleteAccount };
